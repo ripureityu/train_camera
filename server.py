@@ -33,15 +33,6 @@ def index():
         print("send sid:", sid, ", data: aaa")
     return ""
 
-@eio.on("message")
-def on_message(sid, data):
-    # バイナリデータの場合、画像として保存
-    if isinstance(data, bytes):
-        with open("received_image.jpg", "w") as f:
-            f.write(str(data))
-        print("画像を保存しました: received_image.jpg")
-    else:
-        print("message from", sid, ":", data)
 
 if __name__ == "__main__":
     waitressapp = engineio.WSGIApp(eio, wsgi_app=app)

@@ -21,24 +21,16 @@ def disconnect(msg):
     print("message: ", msg)
 
 eio.connect("http://localhost:3000", transports=["polling"])
-
 # カメラを開く
 cap = cv2.VideoCapture(0)
-
 # 画像をキャプチャする
 ret, frame = cap.read()
-
 #return ,image
-
-if ret:#取得できたら
-    # 画像を保存する
-    _, img_bytes =cv2.imencode(".jpg", frame)
-    eio.send(img_bytes.tobytes())
+if ret == True:
+    cv2.imwrite("image.jpg", frame)
 else:
     print("---カメラから画像を取得できませんでした---")
-
 # カメラを閉じる
 cap.release()
-
 eio.wait()
 
