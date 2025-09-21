@@ -21,6 +21,8 @@ def connect(sid, environ):
     sidlist.append(sid)
     print("Connected: ", sid)
 
+
+
 @eio.on("disconnect")
 def disconnect(sid):
     sidlist.append(sid)
@@ -29,9 +31,8 @@ def disconnect(sid):
 @app.route("/")
 def index():
     for sid in sidlist:
-        eio.send(sid, "aaa")
-        print("send sid:", sid, ", data: aaa")
-    return ""
+        eio.send(sid,"capture")
+    return "Hello, World!"
 
 
 if __name__ == "__main__":

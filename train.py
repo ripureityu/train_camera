@@ -3,10 +3,10 @@ import engineio
 
 # import http.client
 # http.client.HTTPConnection.debuglevel = 1
-
 eio = engineio.Client(
     # logger=True,
 )
+
 
 @eio.on("connect")
 def connect():
@@ -17,20 +17,18 @@ def disconnect():
     print("disconnect")
 
 @eio.on("message")
-def disconnect(msg):
+def message(msg):
     print("message: ", msg)
+    if msg == "capture":
+        cap = cv2.VideoCapture(0)
+        ret, frame = cap.read()
+        cv2.imwrite("capture.jpg", frame)
+        print("capture.jpgを保存しました")
+        cap.release()
 
 eio.connect("http://localhost:3000", transports=["polling"])
-# カメラを開く
-cap = cv2.VideoCapture(0)
-# 画像をキャプチャする
-ret, frame = cap.read()
-#return ,image
-if ret == True:
-    cv2.imwrite("image.jpg", frame)
-else:
-    print("---カメラから画像を取得できませんでした---")
-# カメラを閉じる
-cap.release()
+
+
 eio.wait()
+
 
