@@ -1,5 +1,8 @@
 import cv2
 import engineio
+import requests
+
+cap = cv2.VideoCapture(0)
 
 # import http.client
 # http.client.HTTPConnection.debuglevel = 1
@@ -19,15 +22,17 @@ def disconnect():
 @eio.on("message")
 def message(msg):
     print("message:", msg)
-    if msg == " picture request":
-        cap = cv2.VideoCapture(0)
+    if msg == "picture request":
         ret, frame = cap.read()
-        _,buf =cv2.imencode('.jpg', frame)
-        eio.send(buf.tobytes())#画像をバイナリで送信
-        eio.send("crossing_send")
+        _, buf = cv2.imencode('.jpg', frame)
+        response = requests.post(
+            url="http://localhost:3000/picture",
+            data=buf,
+            params={},
+        )
         print("画像データを送信しました")
-    elif msg == "stop picture":
-        cap.release()
+
+        
 
 
 eio.connect("http://localhost:3000", transports=["polling"])

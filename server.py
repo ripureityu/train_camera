@@ -26,7 +26,7 @@ def disconnect(sid):
     print("Disconnected:", sid)
 
 @eio.on("message")
-def message(sid, msg: str):
+def message(sid, msg):
     if msg.startswith("crossing-id "):
         sp = msg.split()
         crossing_id = sp[1]
@@ -35,19 +35,33 @@ def message(sid, msg: str):
         with open("receive.jpg", "wb") as f:
             img = eio.receive(sid)
             pictute =  f.write(msg)
-            eio.send()    
-        
+            eio.send()   
+
+# 
 @app.route("/vigcamera", methods=["GET"])
 def index():
     crossing_id = flask.request.args.get("crossing-id","")
     sid  = sidlist[crossing_id]#sidlistをsidに代入
     eio.send(sid,"picture request")#踏切にメッセージ送信
-    eio.send(sid, "stop picture")
+    #eio.send(sid, "stop picture")
     return "send ok"
 
-# ?v=GvpmzUUCTZk&t=2s
-# v GvpmzUUCTZk t 2s
+picture_data={}
 
+# 写真データ受信:post 
+@app.route("/picture", methods=["POST"])
+def picture():
+    crossing_id = flask.request.args.get("crossing-id","")
+    data = flask.request.get_data()
+    picture_data[crossing_id] = data    
+    return "ok"
+
+# 写真データ受信:get
+@app.route("/get_picture", methods=["GET"])
+def picture():
+    crossing_id = flask.request.args.get("crossing-id","")
+    data = picture_data[crossing_id]   
+    return data
   
 if __name__ == "__main__":
     waitressapp = engineio.WSGIApp(eio, wsgi_app=app)
