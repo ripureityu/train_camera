@@ -3,9 +3,9 @@ require 'faye/websocket'    # faye-websocket: WebSocketサーバ/クライアン
 require 'thread'            # スレッド制御用（今回は未使用）
 require 'json'              # JSONデータ処理用（今回は未使用）
 
-set :server, 'thin'         # サーバにthinを指定（WebSocket対応のため）
+#set :server, 'thin'         # サーバにthinを指定（WebSocket対応のため）
 set :bind, '0.0.0.0'        # 全てのIPアドレスからの接続を許可
-set :port, 3000             # ポート番号を3000に設定
+set :port, 3000    # ポート番号を3000に設定
 
 connections = {}            # 踏切ごとのWebSocket接続を管理するハッシュ
 picture_data = {}           # crossing-idごとの画像データを保存するハッシュ
@@ -45,9 +45,8 @@ get '/ws' do
     # クライアントからメッセージ受信時の処理
     ws.on :message do |event|
       if event.data.start_with?('crossing-id ')
-        crossing_id = event.data.split(' ')[1] # crossing-idを抽出
+        crossing_id = event.data.split(' ')[1] # crossig-idを抽出
         connections[crossing_id] = ws          # 接続を保存
-        ws.send("connected as #{crossing_id}") # 接続完了通知
       end
     end
 

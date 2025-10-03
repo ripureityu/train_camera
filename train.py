@@ -60,7 +60,7 @@ label.pack()
 
 def aaa():
     print("1秒経過")
-    picture_requests = requests.get("http://localhost:3000/vigcamera", params={"crossing-id":"test1"})
+    requests.get("http://localhost:3000/vigcamera", params={"crossing-id":"test1"})
 
     root.after(1000,bbb)
     
