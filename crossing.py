@@ -24,11 +24,14 @@ def message(msg):
     print("message:", msg)
     if msg == "picture request":
         ret, frame = cap.read()
-        _, buf = cv2.imencode('.jpg', frame)
+        _, buf = cv2.imencode('.png', frame)
+        buf = buf.tobytes()
         response = requests.post(
             url="http://localhost:3000/picture",
             data=buf,
-            params={},
+           
+           
+            params={"crossing-id":"test1"},
         )
         print("画像データを送信しました")
 

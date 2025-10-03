@@ -41,6 +41,7 @@ def message(sid, msg):
 @app.route("/vigcamera", methods=["GET"])
 def index():
     crossing_id = flask.request.args.get("crossing-id","")
+    print("vigcamera", crossing_id)
     sid  = sidlist[crossing_id]#sidlistをsidに代入
     eio.send(sid,"picture request")#踏切にメッセージ送信
     #eio.send(sid, "stop picture")
@@ -52,14 +53,16 @@ picture_data={}
 @app.route("/picture", methods=["POST"])
 def picture():
     crossing_id = flask.request.args.get("crossing-id","")
+    print("picture", crossing_id)
     data = flask.request.get_data()
     picture_data[crossing_id] = data    
     return "ok"
 
 # 写真データ受信:get
 @app.route("/get_picture", methods=["GET"])
-def picture():
+def get_picture():
     crossing_id = flask.request.args.get("crossing-id","")
+    print("get_picture", crossing_id)
     data = picture_data[crossing_id]   
     return data
   
