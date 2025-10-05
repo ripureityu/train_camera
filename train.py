@@ -18,6 +18,7 @@ def run_gps(): # GPSモジュールを読み、GPSオブジェクトを更新す
             continue
         for x in sentence: # 読んだ文字列を解析してGPSオブジェクトにデーターを追加、更新する
             gps.update(x)
+        
  
 gpsthread = threading.Thread(target=run_gps, args=()) # 上の関数を実行するスレッドを生成
 gpsthread.daemon = True

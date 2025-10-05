@@ -13,10 +13,13 @@ EM.run do
     puts "WebSocket connected"     # 接続完了メッセージ表示
   end
 
-  ws.on :error do  |event| 
+  ws.on :error do  |event|
+    p event
+    p event.http
+    p event.message
     puts "Error: #{event.message}"  # エラーメッセージ表示
   end
-  
+
 
   # サーバからメッセージを受信したときの処理
   ws.on :message do |event|
@@ -27,7 +30,7 @@ EM.run do
       headers = { 'Content-Type' => 'application/octet-stream' }   # バイナリ送信時はContent-Typeを指定
 
       Net::HTTP.start(uri.host, uri.port) do |http|
-        
+
         req = Net::HTTP::Post.new(uri, headers)
         req.body = buf
         res = http.request(req)
@@ -44,4 +47,4 @@ EM.run do
     EM.stop                         # EventMachineのループを停止
   end
 
-endend
+end
