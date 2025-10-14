@@ -9,7 +9,6 @@ def geopy(distance):
     train_list=['%2.8f','%2.8f']
     distance = geodesic([cross_list[0],cross_list[1]],[train_list[0],train_list[1]]).kilometers
     if distance <= 2.0:
-        aaa()
         print("踏切まで2km以内")
     return distance
 geopy(0)
@@ -20,7 +19,7 @@ gps = micropyGPS.MicropyGPS(9, 'dd') # MicroGPSオブジェクトを生成する
                                      # 引数はタイムゾーンの時差と出力フォーマット
  
 def rungps(): # GPSモジュールを読み、GPSオブジェクトを更新する
-    s = serial.Serial('/dev/tty.usbmodem14301', 9600, timeout=10)
+    s = serial.Serial('/dev/tty.tty.usbmodem144101  ', 9600, timeout=10)
     s.readline() # 最初の1行は中途半端なデーターが読めることがあるので、捨てる
     while True:
         sentence = s.readline().decode('utf-8') # GPSデーターを読み、文字列に変換する

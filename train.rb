@@ -23,7 +23,8 @@ def bbb
   puts "1秒経過"
   uri = URI("http://localhost:3000/get_picture?crossing-id=test1")
   res = Net::HTTP.get(uri)
-
+  File.binwrite(TEMP_FILE_NAME, res.body)
+  images.read(TEMP_FILE_NAME, {"format": "png"})
   Tk.after(1000) { aaa }
 end
 
@@ -34,3 +35,4 @@ end
 
 Tk.after(1000) { aaa }
 Tk.mainloop
+
