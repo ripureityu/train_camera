@@ -10,7 +10,7 @@ gps = micropyGPS.MicropyGPS(9, 'dd')
 
 def run_gps():
     # シリアルポートを開く（GPS受信器からデータ取得）
-    s = serial.Serial('/dev/tty.usbmodem14301', 9600, timeout=10)
+    s = serial.Serial('/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00', 9600, timeout=10)
     s.readline()  # 最初の1行は捨てる（不完全な場合があるため）
     while True:
         sentence = s.readline().decode('utf-8')  # 1行受信し文字列化
