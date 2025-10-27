@@ -1,35 +1,54 @@
+import cv2
+import numpy as np
 from ultralytics import YOLO
 
 # Load a pre-trained YOLO model (adjust model type as needed)
 model = YOLO("yolo11n.pt")  # n, s, m, l, x versions available
 
 # Perform object detection on an image
-results = model.predict(source="bus.jpg")  # Can also use video, directory, URL, etc.
 
-# Display the results
-results[0].show()  # Show the first image results
+def t_f(picture_data):
+    results = model.predict(source=picture_data)  # Can also use video, directory, URL, etc.
+    result = results[0]
+    aaa =result.summary()
+    print(aaa)
+    for i in aaa:
+        value = i['name']
+        if value == 'person':
+            return True
+    return False
+f =open("bus.jpg","rb") 
+print(f)
+fa =f.read()#圧縮されている
+bbb = cv2.imdecode(np.frombuffer(fa,np.uint8),cv2.IMREAD_COLOR_BGR)#圧縮されていない
+print(fa)
+data = t_f(bbb)
+print(data)
+f.close()
 
-
-'''ubuntu 実行結果（errer）
-yudai@yudai-VirtualBox:~/train_camera$ pip3 install ultralytics
-error: externally-managed-environment
-
-× This environment is externally managed
-╰─> To install Python packages system-wide, try apt install
-    python3-xyz, where xyz is the package you are trying to
-    install.
-    
-    If you wish to install a non-Debian-packaged Python package,
-    create a virtual environment using python3 -m venv path/to/venv.
-    Then use path/to/venv/bin/python and path/to/venv/bin/pip. Make
-    sure you have python3-full installed.
-    
-    If you wish to install a non-Debian packaged Python application,
-    it may be easiest to use pipx install xyz, which will manage a
-    virtual environment for you. Make sure you have pipx installed.
-    
-    See /usr/share/doc/python3.12/README.venv for more information.
-
-note: If you believe this is a mistake, please contact your Python installation or OS distribution provider. You can override this, at the risk of breaking your Python installation or OS, by passing --break-system-packages.
-hint: See PEP 668 for the detailed specification.
 '''
+[
+    {'name': 'bus', 'class': 5, 'confidence': 0.94015, 'box': {'x1': 3.83267, 'y1': 229.3642, 'x2': 796.19458, 'y2': 728.41223}},
+    {'name': 'person', 'class': 0, 'confidence': 0.88822, 'box': {'x1': 671.01721, 'y1': 394.83319, 'x2': 809.80975, 'y2': 878.71246}}, 
+    {'name': 'person', 'class': 0, 'confidence': 0.87825, 'box': {'x1': 47.40473, 'y1': 399.56512, 'x2': 239.30066, 'y2': 904.19501}}, 
+    {'name': 'person', 'class': 0, 'confidence': 0.85577, 'box': {'x1': 223.05894, 'y1': 408.68866, 'x2': 344.46768, 'y2': 860.43579}},
+    {'name': 'person', 'class': 0, 'confidence': 0.62192, 'box': {'x1': 0.02174, 'y1': 556.06854, 'x2': 68.88548, 'y2': 872.35919}}
+]
+'''
+
+
+ 
+
+
+ model = YOLO("yolo11n.pt")
+
+def t_f(picture_data):
+    results = model.predict(source=picture_data)  # Can also use video, directory, URL, etc.
+    result = results[0]
+    aaa =result.summary()
+    print(aaa)
+    for i in aaa:
+        value = i['name']
+        if value == 'person':
+            return True
+    return False
