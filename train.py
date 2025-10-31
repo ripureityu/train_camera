@@ -1,13 +1,15 @@
 import requests              # HTTPリクエスト用
 import tkinter as tk         # GUI用
 import serial                # シリアル通信用
-import micropyGPS            # GPSデータ解析用
-import threading             # スレッド処理用
+import micropyGPS            # GPSデータ解析用         
 from geopy.distance import geodesic  # 距離計算用
 from ultralytics import YOLO
 
+import cv2
+import numpy as np
+import traceback
 
-list=[
+crossing_list=[
   [36.433884, 140.471628, "test0"],
   [36.344530, 140.28962, "test1"],
   [35.9337819,140.6531255,"ibrk2"],
@@ -83,47 +85,67 @@ list=[
 
 # GPSオブジェクトを生成（タイムゾーン9、出力フォーマット'dd'）
 gps = micropyGPS.MicropyGPS(9, 'dd')
+model = YOLO("yolo11n.pt") 
 
-def run_gps():
-    # シリアルポートを開く（GPS受信器からデータ取得）
-    s = serial.Serial('/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00', 9600, timeout=10)
-    s.readline()  # 最初の1行は捨てる（不完全な場合があるため）
-    while True:
-        sentence = s.readline().decode('utf-8')  # 1行受信し文字列化
-        if sentence[0] != '$':  # NMEAデータでなければスキップ
-            continue
-        for x in sentence:      # 1文字ずつGPSオブジェクトに渡して解析
-            gps.update(x)
 
-# GPS受信スレッドを起動
-gpsthread = threading.Thread(target=run_gps, args=())
-gpsthread.daemon = True
-gpsthread.start()
-
-def print_gps():
-    # ある程度データが溜まったら表示
-    if gps.clean_sentences > 20:
-        h = gps.timestamp[0] if gps.timestamp[0] else gps.timestamp[0] - 24
-        print('%2d:%02d:%04.1f' % (h, gps.timestamp[1], gps.timestamp[2]))
-        print('%2.8f, %2.8f' % (gps.latitude[0], gps.longitude[0]))
-        print('衛星番号: (仰角, 方位角, SN比)')
-        for k, v in gps.satellite_data.items():
-            print('%d: %s' % (k, v))
-
-def geopy(distance):
-    # 踏切座標と列車座標で距離計算
-    cross_list = [36.370856,140.476135]
-    train_list=['%2.8f'% (gps.latitude[0], gps.longitude[0]),'%2.8f'% (gps.latitude[0], gps.longitude[0])]  # 本来はgps.latitude[0], gps.longitude[0]を使う
-    distance = geodesic([cross_list[0],cross_list[1]],[train_list[0],train_list[1]]).kilometers
+def geopy(train_lat,train_lon,cross_lat,cross_lon):
+    distance = geodesic([train_lat,train_lon],[cross_lat,cross_lon]).kilometers
     if distance <= 2.0:
-        aaa()
         print("踏切まで2km以内")
     return distance
+
+# --- YOLO 統合関数（改善版） ---
+def ai_function_from_bytes(picture_bytes, conf_thres=0.25, imgsz=640):
+    """
+    バイト列 -> OpenCV デコード -> RGB変換 -> YOLO 推論。
+    'person' が見つかれば True を返す。例外発生時は False。
+    """
+    try:
+        nparr = np.frombuffer(picture_bytes, np.uint8)
+        img_bgr = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        if img_bgr is None:
+            print("画像デコード失敗")
+            return False
+        # BGR -> RGB
+        img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
+
+        # Ultralytics に numpy array のリストで渡す（明示的に conf とサイズを指定）
+        results = model.predict(source=[img_rgb], imgsz=imgsz, conf=conf_thres, verbose=False)
+        if not results:
+            return False
+        r = results[0]
+
+        # 安定してクラスIDを取り出す方法を試す
+        # r.boxes.cls が存在する場合はそれを使う（tensor -> numpy）
+        if hasattr(r, "boxes") and getattr(r.boxes, "cls", None) is not None:
+            try:
+                cls_tensor = r.boxes.cls
+                cls_array = cls_tensor.cpu().numpy().astype(int).tolist()
+                for c in cls_array:
+                    name = model.names.get(c, None) if isinstance(model.names, dict) else model.names[c]
+                    if name == "person":
+                        return True
+            except Exception:
+                pass
+
+        # フォールバック: summary() による走査（古い/別実装向け）
+        if hasattr(r, "summary"):
+            summary = r.summary() or []
+            for item in summary:
+                if item.get("name") == "person":
+                    return True
+
+        return False
+    except Exception:
+        print("YOLO 推論エラー:")
+        traceback.print_exc()
+        return False
+# --- ここまで ---
 
 # GUIウィンドウ作成
 root = tk.Tk()
 root.title("Hello Tkinter")
-root.geometry("400x300")
+root.geometry("1200x1000")
 image=tk.PhotoImage()  # 画像表示用
 label = tk.Label(
     root,
@@ -133,24 +155,57 @@ label = tk.Label(
 )
 label.pack()
 
+s = serial.Serial('/dev/serial/by-id/usb-u-blox_AG_-_www.u-blox.com_u-blox_7_-_GPS_GNSS_Receiver-if00', 9600, timeout=10)
+s.readline() # 最初の1行は中途半端なデーターが読めることがあるので、捨てる
+
+
 def aaa():
-    # 1秒ごとに踏切カメラに撮影リクエストを送信
-    print("1秒経過")
-    requests.get("http://localhost:3000/vigcamera", params={"crossing-id":"test1"})
-    root.after(1000,bbb)
+    sentence = s.readline().decode('utf-8') # GPSデーターを読み、文字列に変換する
+    if not sentence or sentence[0] != '$': # 先頭が'$'でなければ捨てる
+        root.after(10,aaa)
+        return
+    for x in sentence: # 読んだ文字列を解析してGPSオブジェクトにデーターを追加、更新する
+        gps.update(x)
+    if gps.clean_sentences > 20: # ちゃんとしたデーターがある程度たまったら出力する
+        print('緯度経度: %2.8f, %2.8f' % (gps.latitude[0], gps.longitude[0]))
+        
+        crossing_list.sort(key=lambda x: geopy(gps.latitude[0], gps.longitude[0],x[0],x[1]))
+        nearest_distance = geopy(gps.latitude[0], gps.longitude[0], crossing_list[0][0], crossing_list[0][1])
+        if nearest_distance < 2:
+                requests.get("http://localhost:3000/vigcamera", params={"crossing-id":"test1"})
+                root.after(1000,bbb)
+                return
+    root.after(10,aaa)
 
 def bbb():
     # 1秒ごとに画像データを取得し表示
-    print("1秒経過")
-    picture_requests = requests.get("http://localhost:3000/get_picture", params={"crossing-id":"test1"})
-    data = picture_requests.content
-    print(type(picture_requests.content))  # データ型確認
-    print(str(data[:10],"utf-8","ignore")) # 先頭10バイトを表示
-    image.config(
-        data=picture_requests.content,     # 画像データを表示（PNG形式）
-        format="png",
-    )
-    root.after(1000,aaa)
+    try:
+        print("1秒経過")
+        picture_requests = requests.get("http://localhost:3000/get_picture", params={"crossing-id":"test1"}, timeout=5)
+        data = picture_requests.content
+        print(type(data))  # データ型確認
+        print(str(data[:10],"utf-8","ignore")) # 先頭10バイトを表示（デバッグ）
+
+        # Tkinter の PhotoImage は PNG を期待する場合があるため例外を捕まえる
+        try:
+            image.config(
+                data=data,
+                format="png"
+            )
+        except Exception:
+            # 表示に失敗しても検出は行う
+            pass
+
+        # ここで受信した画像データに対して人物検出を行う
+        detected = ai_function_from_bytes(data)
+        print("person detected:", detected)
+        # 必要に応じて検出時の処理（通知など）を追加してください
+    except Exception:
+        print("画像取得/処理エラー:")
+        traceback.print_exc()
+    finally:
+        # 次回も1秒後に画像取得（ループを維持）
+        root.after(1000, bbb)
 
 
 

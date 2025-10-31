@@ -7,7 +7,7 @@ model = YOLO("yolo11n.pt")  # n, s, m, l, x versions available
 
 # Perform object detection on an image
 
-def t_f(picture_data):
+def ai_function(picture_data):
     results = model.predict(source=picture_data)  # Can also use video, directory, URL, etc.
     result = results[0]
     aaa =result.summary()
@@ -22,7 +22,7 @@ print(f)
 fa =f.read()#圧縮されている
 bbb = cv2.imdecode(np.frombuffer(fa,np.uint8),cv2.IMREAD_COLOR_BGR)#圧縮されていない
 print(fa)
-data = t_f(bbb)
+data = ai_function(bbb)
 print(data)
 f.close()
 
