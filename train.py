@@ -3,7 +3,7 @@ import tkinter as tk         # GUI用
 import serial                # シリアル通信用
 import micropyGPS            # GPSデータ解析用         
 from geopy.distance import geodesic  # 距離計算用
-from ultralytics import YOLO
+from ultralytics.models.yolo import YOLO
 
 import cv2
 import numpy as np
@@ -115,19 +115,6 @@ def ai_function_from_bytes(picture_bytes, conf_thres=0.25, imgsz=640):
             return False
         r = results[0]
 
-        # 安定してクラスIDを取り出す方法を試す
-        # r.boxes.cls が存在する場合はそれを使う（tensor -> numpy）
-        if hasattr(r, "boxes") and getattr(r.boxes, "cls", None) is not None:
-            try:
-                cls_tensor = r.boxes.cls
-                cls_array = cls_tensor.cpu().numpy().astype(int).tolist()
-                for c in cls_array:
-                    name = model.names.get(c, None) if isinstance(model.names, dict) else model.names[c]
-                    if name == "person":
-                        return True
-            except Exception:
-                pass
-
         # フォールバック: summary() による走査（古い/別実装向け）
         if hasattr(r, "summary"):
             summary = r.summary() or []
@@ -140,7 +127,7 @@ def ai_function_from_bytes(picture_bytes, conf_thres=0.25, imgsz=640):
         print("YOLO 推論エラー:")
         traceback.print_exc()
         return False
-# --- ここまで ---
+
 
 # GUIウィンドウ作成
 root = tk.Tk()
@@ -171,11 +158,9 @@ def aaa():
         
         crossing_list.sort(key=lambda x: geopy(gps.latitude[0], gps.longitude[0],x[0],x[1]))
         nearest_distance = geopy(gps.latitude[0], gps.longitude[0], crossing_list[0][0], crossing_list[0][1])
-        if nearest_distance < 2:
-                requests.get("http://localhost:3000/vigcamera", params={"crossing-id":"test1"})
-                root.after(1000,bbb)
-                return
-    root.after(10,aaa)
+        requests.get("http://localhost:3000/vigcamera", params={"crossing-id":"test1"})
+        root.after(1000,bbb)
+    root.after(1000,aaa)
 
 def bbb():
     # 1秒ごとに画像データを取得し表示
@@ -183,6 +168,7 @@ def bbb():
         print("1秒経過")
         picture_requests = requests.get("http://localhost:3000/get_picture", params={"crossing-id":"test1"}, timeout=5)
         data = picture_requests.content
+        print(data)
         print(type(data))  # データ型確認
         print(str(data[:10],"utf-8","ignore")) # 先頭10バイトを表示（デバッグ）
 

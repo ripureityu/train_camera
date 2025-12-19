@@ -1,9 +1,11 @@
 import cv2                 # カメラ画像取得用
 import engineio            # リアルタイム通信用
 import requests            # HTTP通信用
+import cv2
+from ultralytics.models.yolo import YOLO
 
+model = YOLO("yolo11n.pt") # YOLOv11のモデルをロード
 cap = cv2.VideoCapture(0)  # カメラデバイスを開く
-
 eio = engineio.Client()    # Engine.IOクライアント生成
 
 @eio.on("connect")
@@ -21,8 +23,9 @@ def message(msg):
     if msg == "picture request":
         # サーバから撮影リクエストを受けたら画像を撮影
         ret, frame = cap.read()
-        _, buf = cv2.imencode('.png', frame)  # PNG形式に変換
-        buf = buf.tobytes()                   # バイナリデータ化
+        _,buf = cv2.imencode('.png', frame)  # PNG形式に変換
+        buf = buf.tobytes() # バイナリデータ化
+            # 画像データをサーバに送信        
         response = requests.post(
             url="http://localhost:3000/picture",
             data=buf,

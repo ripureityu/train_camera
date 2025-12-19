@@ -88,6 +88,6 @@ if __name__ == "__main__":
     app_with_eio = engineio.WSGIApp(eio, app)
     waitress.serve(
         app_with_eio,
-        host="0.0.0.0",
+        host="0.0.0.0", 
         port=3000,
     )
