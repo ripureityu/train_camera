@@ -69,6 +69,7 @@ def picture():
         return "no data", 400
     picture_data[crossing_id] = data
     print(f"Received picture for {crossing_id}, {len(data)} bytes")
+    print(type(data))
     return "ok"
 
 @app.route("/get_picture", methods=["GET"])
